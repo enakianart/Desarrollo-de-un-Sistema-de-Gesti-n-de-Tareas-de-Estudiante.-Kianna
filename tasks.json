@@ -1,29 +1,41 @@
-[
-  {
-    "id": "sample-1",
-    "title": "User Flow",
-    "description": "Diseñar la interfaz principal y flujo de usuario.",
-    "deliveryDate": "2025-12-23",
-    "materia": "UX Design",
-    "priority": "alta",
-    "status": "in-progress"
-  },
-  {
-    "id": "sample-2",
-    "title": "Mockups",
-    "description": "Crear mockups para las pantallas principales.",
-    "deliveryDate": "2025-12-28",
-    "materia": "UI",
-    "priority": "media",
-    "status": "in-progress"
-  },
-  {
-    "id": "sample-3",
-    "title": "Entrega final",
-    "description": "Compilar y subir la entrega final.",
-    "deliveryDate": "2026-01-05",
-    "materia": "Proyecto",
-    "priority": "baja",
-    "status": "overdue"
-  }
-]
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Resumen capítulo 3",
+      "subject": "Historia",
+      "dueDate": "2025-03-05",
+      "priority": "alta",
+      "status": "pendiente",
+      "description": "Elaborar un resumen de 2 páginas del capítulo 3 sobre la Revolución Francesa. Incluir contexto histórico, causas principales y consecuencias. Usar referencias bibliográficas.",
+      "createdAt": "2025-02-20T15:00:00Z",
+      "updatedAt": "2025-02-20T15:00:00Z",
+      "completedAt": null
+    },
+    {
+      "id": 2,
+      "title": "Ejercicios 5–10",
+      "subject": "Matemáticas",
+      "dueDate": "2025-02-28",
+      "priority": "media",
+      "status": "retrasada",
+      "description": "Resolver ejercicios de ecuaciones cuadráticas. Usar fórmula general y verificar resultados por sustitución.",
+      "createdAt": "2025-02-10T12:00:00Z",
+      "updatedAt": "2025-03-01T09:00:00Z",
+      "completedAt": null
+    },
+    {
+      "id": 3,
+      "title": "Proyecto final de Programación",
+      "subject": "Programación",
+      "dueDate": "2025-03-15",
+      "priority": "alta",
+      "status": "pendiente",
+      "description": "Crear un sistema de gestión de tareas en HTML/CSS/JavaScript. Debe incluir CRUD completo, localStorage y diseño responsive.",
+      "createdAt": "2025-02-15T10:30:00Z",
+      "updatedAt": "2025-02-15T10:30:00Z",
+      "completedAt": null
+    }
+  ]
+}

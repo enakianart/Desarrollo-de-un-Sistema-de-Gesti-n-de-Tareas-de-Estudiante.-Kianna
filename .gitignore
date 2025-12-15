@@ -1,0 +1,33 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node.js (si se usa en el futuro)
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Archivos de respaldo
+*-old.css
+*.bak
+*.backup
+
+# Variables de entorno
+.env
+.env.local
+
+# Logs
+*.log
+
+# Temporales
+.tmp/
+temp/
