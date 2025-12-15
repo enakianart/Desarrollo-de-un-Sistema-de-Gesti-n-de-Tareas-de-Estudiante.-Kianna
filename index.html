@@ -3,142 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasky | Sistema de Gestión de Tareas</title>
+    <title>Gestor de Tareas Académicas | Kianna</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-    <div class="app-container">
-        
-        <aside class="sidebar">
-            <div class="logo">
-                <i class="fas fa-tasks"></i> kianna
+    <div class="app-wrapper">
+        <!-- Header Principal -->
+        <header class="app-header">
+            <div class="header-container">
+                <div class="logo">
+                    <i class="fas fa-tasks"></i>
+                    <span>Gestor de Tareas</span>
+                </div>
+                <button id="new-task-btn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Tarea
+                </button>
             </div>
-            <nav class="main-nav">
-                <a href="#" class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</a>
-                <a href="#" class="nav-item"><i class="fas fa-list-ul"></i> Tareas</a>
-                <a href="#" class="nav-item"><i class="fas fa-calendar-alt"></i> Calendario</a>
-                <a href="#" class="nav-item"><i class="fas fa-users"></i> Miembros</a>
-            </nav>
-        </aside>
+        </header>
 
+        <!-- Contenedor Principal -->
         <main class="main-content">
-            
-            <header class="main-header">
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="search-tasks" placeholder="Search tasks">
-                </div>
-                <div class="user-actions">
-                    <div class="avatar-group">
-                        <div class="avatar">+1</div>
+            <!-- Sección de Filtros y Ordenamiento -->
+            <section class="controls-section">
+                <div class="controls-left">
+                    <div class="filter-group">
+                        <label for="filter-subject">Por Materia:</label>
+                        <select id="filter-subject" class="filter-select">
+                            <option value="">Todas</option>
+                        </select>
                     </div>
-                    <button class="add-task-btn" onclick="openCreateModal()">
-                        <i class="fas fa-plus"></i> Add task
-                    </button>
-                </div>
-            </header>
-
-            <section class="toolbar">
-                <button class="tool-btn"><i class="fas fa-eye"></i> Preview</button>
-                <button class="tool-btn" id="sort-btn"><i class="fas fa-sort-amount-down"></i> Sort</button>
-                <div class="tool-btn filter-dropdown">
-                    <i class="fas fa-filter"></i> Filter
-                    <div class="filter-content">
-                        <a href="#" data-filter="all">Todas</a>
-                        <a href="#" data-filter="alta">Prioridad Alta</a>
-                        <a href="#" data-filter="media">Prioridad Media</a>
-                        <a href="#" data-filter="baja">Prioridad Baja</a>
-                        </div>
-                </div>
-            </section>
-
-            <section class="kanban-board">
-                
-                <div class="task-column">
-                    <div class="column-header">
-                        <h3>In Progress (<span id="count-in-progress">0</span>)</h3>
-                        <i class="fas fa-ellipsis-v"></i>
-                    </div>
-                    <div class="task-list" id="task-list-in-progress">
-                        </div>
-                </div>
-
-                <div class="task-column">
-                    <div class="column-header">
-                        <h3>Completed Task (<span id="count-completed">0</span>)</h3>
-                        <i class="fas fa-ellipsis-v"></i>
-                    </div>
-                    <div class="task-list" id="task-list-completed">
-                        </div>
-                </div>
-
-                <div class="task-column">
-                    <div class="column-header">
-                        <h3>Over-Due (<span id="count-overdue">0</span>)</h3>
-                        <i class="fas fa-ellipsis-v"></i>
-                    </div>
-                    <div class="task-list" id="task-list-overdue">
-                        </div>
-                </div>
-
-            </section>
-        </main>
-    </div>
-
-    <div id="taskFormModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('taskFormModal')">&times;</span>
-            <h2><span id="modal-title">Registrar</span> Tarea</h2>
-            <form id="task-form">
-                <input type="hidden" id="task-id">
-                
-                <div class="form-group">
-                    <label for="task-title">Título de la Tarea</label>
-                    <input type="text" id="task-title" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="task-priority">Prioridad</label>
-                        <select id="task-priority" required>
+                    <div class="filter-group">
+                        <label for="filter-priority">Por Prioridad:</label>
+                        <select id="filter-priority" class="filter-select">
+                            <option value="">Todas</option>
                             <option value="alta">Alta</option>
                             <option value="media">Media</option>
                             <option value="baja">Baja</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="task-materia">Materia/Área</label>
-                        <input type="text" id="task-materia" required placeholder="Ej: UX Design">
+                </div>
+                <div class="controls-right">
+                    <div class="filter-group">
+                        <label for="sort-select">Ordenar por:</label>
+                        <select id="sort-select" class="filter-select">
+                            <option value="date-asc">Fecha (próxima primero)</option>
+                            <option value="date-desc">Fecha (lejana primero)</option>
+                            <option value="priority">Prioridad (Alta → Baja)</option>
+                        </select>
                     </div>
+                </div>
+            </section>
+
+            <!-- Contenedor de Tarjetas -->
+            <section class="tasks-grid-section">
+                <div id="tasks-grid" class="tasks-grid">
+                    <!-- Las tarjetas se insertarán aquí con JavaScript -->
+                </div>
+                <div id="empty-state" class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No hay tareas que mostrar</p>
+                    <button id="empty-cta-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear primera tarea
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para Crear/Editar Tareas -->
+    <div id="task-modal" class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Nueva Tarea</h2>
+                <button id="close-modal-btn" class="btn-close" aria-label="Cerrar modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="task-form" class="task-form">
+                <input type="hidden" id="task-id">
+
+                <div class="form-group">
+                    <label for="field-title">Título de la Tarea *</label>
+                    <input 
+                        type="text" 
+                        id="field-title" 
+                        name="title" 
+                        placeholder="Ej: Resumen capítulo 3"
+                        required
+                        maxlength="100"
+                    >
+                    <small class="char-count">0/100</small>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="task-delivery-date">Fecha de Entrega</label>
-                        <input type="date" id="task-delivery-date" required>
+                        <label for="field-subject">Materia/Área *</label>
+                        <input 
+                            type="text" 
+                            id="field-subject" 
+                            name="subject" 
+                            placeholder="Ej: Historia"
+                            required
+                            maxlength="50"
+                        >
                     </div>
                     <div class="form-group">
-                        <label for="task-status">Estado</label>
-                        <select id="task-status" required>
-                            <option value="in-progress">En Progreso</option>
-                            <option value="completed">Completada</option>
-                            <option value="overdue">Retrasada</option>
+                        <label for="field-priority">Prioridad *</label>
+                        <select id="field-priority" name="priority" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="alta">Alta</option>
+                            <option value="media">Media</option>
+                            <option value="baja">Baja</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="task-description">Descripción Detallada</label>
-                    <textarea id="task-description" rows="4" required></textarea>
+                    <label for="field-duedate">Fecha de Entrega *</label>
+                    <input 
+                        type="date" 
+                        id="field-duedate" 
+                        name="dueDate" 
+                        required
+                    >
                 </div>
-                
-                <button type="submit" id="submit-btn" class="add-task-btn">Guardar Tarea</button>
+
+                <div class="form-group">
+                    <label for="field-description">Descripción *</label>
+                    <textarea 
+                        id="field-description" 
+                        name="description" 
+                        rows="5"
+                        placeholder="Describe los detalles de la tarea..."
+                        required
+                        maxlength="1000"
+                    ></textarea>
+                    <small class="char-count">0/1000</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Tarea
+                    </button>
+                </div>
             </form>
         </div>
     </div>
-    
+
+    <!-- Modal de Confirmación para Eliminación -->
+    <div id="confirm-modal" class="modal" role="dialog" aria-labelledby="confirm-title" aria-modal="true">
+        <div class="modal-content modal-confirm">
+            <h2 id="confirm-title">Confirmar eliminación</h2>
+            <p id="confirm-message">¿Estás seguro de que deseas eliminar esta tarea?</p>
+            <div class="form-actions">
+                <button id="confirm-cancel" class="btn btn-secondary">Cancelar</button>
+                <button id="confirm-delete" class="btn btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
