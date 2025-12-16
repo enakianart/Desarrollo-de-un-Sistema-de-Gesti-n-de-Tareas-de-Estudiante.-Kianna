@@ -1,41 +1,4 @@
 {
   "version": 1,
-  "tasks": [
-    {
-      "id": 1,
-      "title": "Resumen capítulo 3",
-      "subject": "Historia",
-      "dueDate": "2025-03-05",
-      "priority": "alta",
-      "status": "pendiente",
-      "description": "Elaborar un resumen de 2 páginas del capítulo 3 sobre la Revolución Francesa. Incluir contexto histórico, causas principales y consecuencias. Usar referencias bibliográficas.",
-      "createdAt": "2025-02-20T15:00:00Z",
-      "updatedAt": "2025-02-20T15:00:00Z",
-      "completedAt": null
-    },
-    {
-      "id": 2,
-      "title": "Ejercicios 5–10",
-      "subject": "Matemáticas",
-      "dueDate": "2025-02-28",
-      "priority": "media",
-      "status": "retrasada",
-      "description": "Resolver ejercicios de ecuaciones cuadráticas. Usar fórmula general y verificar resultados por sustitución.",
-      "createdAt": "2025-02-10T12:00:00Z",
-      "updatedAt": "2025-03-01T09:00:00Z",
-      "completedAt": null
-    },
-    {
-      "id": 3,
-      "title": "Proyecto final de Programación",
-      "subject": "Programación",
-      "dueDate": "2025-03-15",
-      "priority": "alta",
-      "status": "pendiente",
-      "description": "Crear un sistema de gestión de tareas en HTML/CSS/JavaScript. Debe incluir CRUD completo, localStorage y diseño responsive.",
-      "createdAt": "2025-02-15T10:30:00Z",
-      "updatedAt": "2025-02-15T10:30:00Z",
-      "completedAt": null
-    }
-  ]
+  "tasks": []
 }

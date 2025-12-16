@@ -12,103 +12,42 @@ let currentFilterSubject = '';
 let currentFilterPriority = '';
 let deleteConfirmationId = null;
 
-// Referencias del DOM
-const taskModal = document.getElementById('task-modal');
-const confirmModal = document.getElementById('confirm-modal');
-const taskForm = document.getElementById('task-form');
-const newTaskBtn = document.getElementById('new-task-btn');
-const closeModalBtn = document.getElementById('close-modal-btn');
-const cancelBtn = document.getElementById('cancel-btn');
-const confirmCancelBtn = document.getElementById('confirm-cancel');
-const confirmDeleteBtn = document.getElementById('confirm-delete');
-const tasksGrid = document.getElementById('tasks-grid');
-const emptyState = document.getElementById('empty-state');
-const emptyCTA = document.getElementById('empty-cta-btn');
+// Referencias del DOM (se inicializan en `init()` para evitar valores null)
+let taskModal;
+let confirmModal;
+let taskForm;
+let newTaskBtn;
+let closeModalBtn;
+let cancelBtn;
+let confirmCancelBtn;
+let confirmDeleteBtn;
+let tasksGrid;
+let emptyState;
+let emptyCTA;
 
-// Inputs del formulario
-const fieldTitle = document.getElementById('field-title');
-const fieldSubject = document.getElementById('field-subject');
-const fieldPriority = document.getElementById('field-priority');
-const fieldDueDate = document.getElementById('field-duedate');
-const fieldDescription = document.getElementById('field-description');
+// Inputs del formulario (se inicializan en init)
+let fieldTitle;
+let fieldSubject;
+let fieldPriority;
+let fieldDueDate;
+let fieldDescription;
 
-// Selectores de filtros y orden
-const filterSubjectSelect = document.getElementById('filter-subject');
-const filterPrioritySelect = document.getElementById('filter-priority');
-const sortSelect = document.getElementById('sort-select');
+// Selectores de filtros y orden (se inicializan en init)
+let filterSubjectSelect;
+let filterPrioritySelect;
+let sortSelect;
 
 // --- PERSISTENCIA EN LOCALSTORAGE ---
 
-/**
- * Carga las tareas desde localStorage
- */
-function loadTasks() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-        try {
-            tasks = JSON.parse(stored);
-        } catch (e) {
-            console.error('Error al parsear localStorage:', e);
-            tasks = getSeedData();
-            saveTasks();
-        }
-    } else {
-        // Primer uso: cargar datos de semilla
-        tasks = getSeedData();
-        saveTasks();
-    }
-}
+
 
 /**
- * Guarda las tareas en localStorage
- */
-function saveTasks() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-}
-
-/**
- * Datos de semilla (tareas de ejemplo)
+ * Datos de semilla (tareas de ejemplo) — ahora vacío por defecto
  */
 function getSeedData() {
-    return [
-        {
-            id: 1,
-            title: 'Resumen capítulo 3',
-            subject: 'Historia',
-            dueDate: '2025-03-05',
-            priority: 'alta',
-            status: 'pendiente',
-            description: 'Elaborar un resumen de 2 páginas del capítulo 3 sobre la Revolución Francesa. Incluir contexto histórico, causas principales y consecuencias.',
-            createdAt: new Date('2025-02-20T15:00:00Z').toISOString(),
-            updatedAt: new Date('2025-02-20T15:00:00Z').toISOString(),
-            completedAt: null
-        },
-        {
-            id: 2,
-            title: 'Ejercicios 5–10',
-            subject: 'Matemáticas',
-            dueDate: '2025-02-28',
-            priority: 'media',
-            status: 'retrasada',
-            description: 'Resolver ejercicios de ecuaciones cuadráticas. Usar fórmula general y verificar resultados por sustitución.',
-            createdAt: new Date('2025-02-10T12:00:00Z').toISOString(),
-            updatedAt: new Date('2025-03-01T09:00:00Z').toISOString(),
-            completedAt: null
-        },
-        {
-            id: 3,
-            title: 'Proyecto final de Programación',
-            subject: 'Programación',
-            dueDate: '2025-03-15',
-            priority: 'alta',
-            status: 'pendiente',
-            description: 'Crear un sistema de gestión de tareas en HTML/CSS/JavaScript. Debe incluir CRUD completo, localStorage y diseño responsive.',
-            createdAt: new Date('2025-02-15T10:30:00Z').toISOString(),
-            updatedAt: new Date('2025-02-15T10:30:00Z').toISOString(),
-            completedAt: null
-        }
-    ];
-}
+    // La aplicación inicia sin tareas por defecto
+    return [];
+} 
 
 // --- UTILIDADES ---
 
@@ -122,450 +61,170 @@ function formatDate(isoDate) {
 }
 
 /**
- * Determina el estado de una tarea (pendiente, completada, retrasada)
- */
-function determineStatus(task) {
-    if (task.status === 'completada') return 'completada';
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dueDate = new Date(task.dueDate + 'T00:00:00');
-    
-    if (dueDate < today) return 'retrasada';
-    return 'pendiente';
-}
-
-/**
- * Obtiene todas las materias únicas del listado de tareas
- */
-function getUniqueSubjects() {
-    return [...new Set(tasks.map(t => t.subject).filter(Boolean))].sort();
-}
-
-/**
  * Trunca texto a longitud máxima
  */
 function truncateText(text, maxLength = 150) {
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
+    if (!text) return '';
+    return text.length <= maxLength ? text : text.slice(0, maxLength) + '...';
 }
 
-// --- RENDERIZADO ---
+// Helper pequeño y seguro para renderizar texto
+function escapeHtml(str = '') {
+    return String(str).replace(/[&<>"]/g, (s) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+}
 
-/**
- * Renderiza todas las tareas aplicando filtros y orden
- */
+// Comparador de fechas: tareas sin fecha van al final
+// dir = 1 (asc: más próxima primero), dir = -1 (desc: más lejana primero)
+function compareDates(a, b, dir = 1) {
+    const ta = a.dueDate ? Date.parse(a.dueDate) : null;
+    const tb = b.dueDate ? Date.parse(b.dueDate) : null;
+    if (ta === null && tb === null) return 0;
+    if (ta === null) return 1; // a sin fecha -> después
+    if (tb === null) return -1; // b sin fecha -> después
+    return dir * (ta - tb);
+}
+
+// Mantener persistencia simple
+function loadTasks() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    tasks = stored ? JSON.parse(stored) : getSeedData();
+}
+
+function saveTasks() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function getSeedData() { return []; }
+
+// Render muy simple: tarjetas con botones de editar/eliminar
 function renderTasks() {
-    let filtered = tasks.slice();
-    
-    // Aplicar filtros
-    if (currentFilterSubject) {
-        filtered = filtered.filter(t => t.subject === currentFilterSubject);
+    if (!tasksGrid) return;
+
+    // Copia la lista y aplica orden simple
+    let list = tasks.slice();
+    if (currentSort === 'date-asc') list.sort((a, b) => compareDates(a, b, 1));
+    else if (currentSort === 'date-desc') list.sort((a, b) => compareDates(a, b, -1));
+    else if (currentSort === 'priority') {
+        const p = { alta: 3, media: 2, baja: 1 };
+        list.sort((a, b) => (p[b.priority] || 0) - (p[a.priority] || 0));
     }
-    if (currentFilterPriority) {
-        filtered = filtered.filter(t => t.priority === currentFilterPriority);
-    }
-    
-    // Aplicar orden
-    filtered.sort((a, b) => {
-        if (currentSort === 'date-asc') {
-            return new Date(a.dueDate) - new Date(b.dueDate);
-        } else if (currentSort === 'date-desc') {
-            return new Date(b.dueDate) - new Date(a.dueDate);
-        } else if (currentSort === 'priority') {
-            const priorityMap = { alta: 3, media: 2, baja: 1 };
-            return priorityMap[b.priority] - priorityMap[a.priority];
-        }
-        return 0;
-    });
-    
-    // Limpiar grid
-    tasksGrid.innerHTML = '';
-    
-    // Mostrar u ocultar estado vacío
-    if (filtered.length === 0) {
-        emptyState.classList.add('show');
-        tasksGrid.style.display = 'none';
-    } else {
-        emptyState.classList.remove('show');
-        tasksGrid.style.display = 'grid';
-        
-        // Renderizar tarjetas
-        filtered.forEach(task => {
-            const card = createTaskCard(task);
-            tasksGrid.appendChild(card);
-        });
-    }
-    
-    // Actualizar opciones de materias
-    updateSubjectFilters();
-}
 
-/**
- * Crea un elemento de tarjeta de tarea
- */
-function createTaskCard(task) {
-    const status = determineStatus(task);
-    const card = document.createElement('article');
-    card.className = `task-card priority-${task.priority}`;
-    card.dataset.taskId = task.id;
-    
-    // Badges
-    const badges = document.createElement('div');
-    badges.className = 'card-badges';
-    
-    const priorityBadge = document.createElement('span');
-    priorityBadge.className = `badge badge-priority ${task.priority}`;
-    priorityBadge.innerHTML = `<i class="fas fa-${getPriorityIcon(task.priority)}"></i> ${task.priority}`;
-    
-    const statusBadge = document.createElement('span');
-    statusBadge.className = `badge badge-status ${status}`;
-    statusBadge.innerHTML = `${getStatusLabel(status)}`;
-    
-    badges.appendChild(priorityBadge);
-    badges.appendChild(statusBadge);
-    
-    // Header
-    const header = document.createElement('div');
-    header.className = 'card-header';
-    const title = document.createElement('h3');
-    title.className = 'card-title';
-    title.textContent = task.title;
-    header.appendChild(title);
-    header.appendChild(badges);
-    
-    // Meta (materia y fecha)
-    const meta = document.createElement('div');
-    meta.className = 'card-meta';
-    
-    const subject = document.createElement('span');
-    subject.className = 'card-subject';
-    subject.textContent = task.subject;
-    
-    const date = document.createElement('span');
-    date.className = 'card-date';
-    date.innerHTML = `<i class="fas fa-calendar-alt"></i> ${formatDate(task.dueDate)}`;
-    
-    meta.appendChild(subject);
-    meta.appendChild(date);
-    
-    // Descripción
-    const description = document.createElement('p');
-    description.className = 'card-description';
-    description.textContent = truncateText(task.description, 150);
-    
-    // Acciones
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
-    
-    const btnEdit = document.createElement('button');
-    btnEdit.type = 'button';
-    btnEdit.className = 'btn-card';
-    btnEdit.innerHTML = '<i class="fas fa-edit"></i> Editar';
-    btnEdit.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openEditModal(task.id);
-    });
-    
-    const btnDelete = document.createElement('button');
-    btnDelete.type = 'button';
-    btnDelete.className = 'btn-card danger';
-    btnDelete.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar';
-    btnDelete.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openDeleteConfirm(task.id);
-    });
-    
-    actions.appendChild(btnEdit);
-    actions.appendChild(btnDelete);
-    
-    // Ensamblar tarjeta
-    card.appendChild(header);
-    card.appendChild(meta);
-    card.appendChild(description);
-    card.appendChild(actions);
-    
-    return card;
-}
-
-/**
- * Obtiene el ícono de Font Awesome para cada prioridad
- */
-function getPriorityIcon(priority) {
-    const icons = {
-        alta: 'exclamation-circle',
-        media: 'minus-circle',
-        baja: 'check-circle'
-    };
-    return icons[priority] || 'circle';
-}
-
-/**
- * Obtiene la etiqueta legible de estado
- */
-function getStatusLabel(status) {
-    const labels = {
-        pendiente: 'Pendiente',
-        completada: 'Completada',
-        retrasada: 'Retrasada'
-    };
-    return labels[status] || status;
-}
-
-/**
- * Actualiza las opciones del filtro de materias
- */
-function updateSubjectFilters() {
-    const subjects = getUniqueSubjects();
-    const currentValue = filterSubjectSelect.value;
-    
-    // Preservar opción vacía
-    filterSubjectSelect.innerHTML = '<option value="">Todas</option>';
-    
-    subjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject;
-        option.textContent = subject;
-        filterSubjectSelect.appendChild(option);
-    });
-    
-    filterSubjectSelect.value = currentValue;
-}
-
-// --- CRUD OPERATIONS ---
-
-/**
- * Valida los datos del formulario
- */
-function validateForm() {
-    const errors = [];
-    
-    if (!fieldTitle.value.trim()) {
-        errors.push('El título es obligatorio');
-    }
-    
-    if (!fieldSubject.value.trim()) {
-        errors.push('La materia/área es obligatoria');
-    }
-    
-    if (!fieldDueDate.value) {
-        errors.push('La fecha de entrega es obligatoria');
-    }
-    
-    if (!fieldPriority.value) {
-        errors.push('La prioridad es obligatoria');
-    }
-    
-    if (!fieldDescription.value.trim()) {
-        errors.push('La descripción es obligatoria');
-    }
-    
-    if (fieldDescription.value.length > 1000) {
-        errors.push('La descripción no puede exceder 1000 caracteres');
-    }
-    
-    return errors;
-}
-
-/**
- * Limpia el formulario
- */
-function resetForm() {
-    taskForm.reset();
-    currentEditingId = null;
-    document.getElementById('field-title').value = '';
-    document.getElementById('field-subject').value = '';
-    document.getElementById('field-priority').value = '';
-    document.getElementById('field-duedate').value = '';
-    document.getElementById('field-description').value = '';
-    updateCharCount();
-}
-
-/**
- * Abre el modal para crear una nueva tarea
- */
-function openCreateModal() {
-    currentEditingId = null;
-    document.getElementById('modal-title').textContent = 'Nueva Tarea';
-    resetForm();
-    taskModal.classList.add('show');
-    fieldTitle.focus();
-}
-
-/**
- * Abre el modal para editar una tarea existente
- */
-function openEditModal(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-    
-    currentEditingId = taskId;
-    document.getElementById('modal-title').textContent = 'Editar Tarea';
-    
-    fieldTitle.value = task.title;
-    fieldSubject.value = task.subject;
-    fieldPriority.value = task.priority;
-    fieldDueDate.value = task.dueDate;
-    fieldDescription.value = task.description;
-    updateCharCount();
-    
-    taskModal.classList.add('show');
-    fieldTitle.focus();
-}
-
-/**
- * Cierra el modal de tareas
- */
-function closeTaskModal() {
-    taskModal.classList.remove('show');
-    resetForm();
-}
-
-/**
- * Abre el diálogo de confirmación para eliminar
- */
-function openDeleteConfirm(taskId) {
-    deleteConfirmationId = taskId;
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-        document.getElementById('confirm-message').textContent = 
-            `¿Estás seguro de que deseas eliminar la tarea "${task.title}"? Esta acción no se puede deshacer.`;
-        confirmModal.classList.add('show');
-    }
-}
-
-/**
- * Cierra el modal de confirmación
- */
-function closeConfirmModal() {
-    confirmModal.classList.remove('show');
-    deleteConfirmationId = null;
-}
-
-/**
- * Procesa el formulario (crear o actualizar)
- */
-function handleFormSubmit(e) {
-    e.preventDefault();
-    
-    // Validar
-    const errors = validateForm();
-    if (errors.length > 0) {
-        alert(errors.join('\n'));
+    if (list.length === 0) {
+        if (emptyState) emptyState.classList.add('show');
+        tasksGrid.innerHTML = '<div class="empty">No hay tareas</div>';
         return;
     }
-    
+
+    if (emptyState) emptyState.classList.remove('show');
+
+    tasksGrid.innerHTML = list.map(t => `
+        <article class="task-card" data-id="${t.id}">
+            <div class="card-header">
+                <h3 class="card-title">${escapeHtml(t.title)}</h3>
+                <div class="card-meta"><span class="card-subject">${escapeHtml(t.subject || '')}</span> <span class="card-date">${formatDate(t.dueDate || '')}</span></div>
+            </div>
+            <p class="card-description">${escapeHtml(truncateText(t.description || '', 200))}</p>
+            <div class="card-actions">
+                <button type="button" data-action="edit" data-id="${t.id}" class="btn-card">Editar</button>
+                <button type="button" data-action="delete" data-id="${t.id}" class="btn-card danger">Eliminar</button>
+            </div>
+        </article>
+    `).join('');
+}
+
+// Validación mínima
+function validateForm() {
+    if (!fieldTitle) return ['Formulario no disponible'];
+    return fieldTitle.value.trim() ? [] : ['El título es obligatorio'];
+}
+
+function resetForm() {
+    if (!taskForm) return;
+    taskForm.reset();
+    currentEditingId = null;
+}
+
+function openCreateModal() {
+    currentEditingId = null;
+    const title = document.getElementById('titulo-modal'); if (title) title.textContent = 'Nueva Tarea';
+    resetForm();
+    if (taskModal) taskModal.classList.add('show');
+    if (fieldTitle) fieldTitle.focus();
+}
+
+function openEditModal(id) {
+    const t = tasks.find(x => x.id === id); if (!t || !taskModal) return;
+    currentEditingId = id;
+    const title = document.getElementById('titulo-modal'); if (title) title.textContent = 'Editar Tarea';
+    if (fieldTitle) fieldTitle.value = t.title || '';
+    if (fieldSubject) fieldSubject.value = t.subject || '';
+    if (fieldPriority) fieldPriority.value = t.priority || '';
+    if (fieldDueDate) fieldDueDate.value = t.dueDate || '';
+    if (fieldDescription) fieldDescription.value = t.description || '';
+    taskModal.classList.add('show');
+    if (fieldTitle) fieldTitle.focus();
+}
+
+function closeTaskModal() { if (taskModal) taskModal.classList.remove('show'); resetForm(); }
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    const errors = validateForm(); if (errors.length) { alert(errors.join('\n')); return; }
+
     if (currentEditingId) {
-        // Actualizar tarea existente
-        const task = tasks.find(t => t.id === currentEditingId);
-        if (task) {
-            task.title = fieldTitle.value.trim();
-            task.subject = fieldSubject.value.trim();
-            task.priority = fieldPriority.value;
-            task.dueDate = fieldDueDate.value;
-            task.description = fieldDescription.value.trim();
-            task.updatedAt = new Date().toISOString();
+        const t = tasks.find(x => x.id === currentEditingId); if (t) {
+            t.title = fieldTitle.value.trim(); t.subject = fieldSubject.value.trim(); t.priority = fieldPriority.value; t.dueDate = fieldDueDate.value; t.description = fieldDescription.value.trim();
         }
     } else {
-        // Crear nueva tarea
-        const newTask = {
-            id: Date.now(),
-            title: fieldTitle.value.trim(),
-            subject: fieldSubject.value.trim(),
-            dueDate: fieldDueDate.value,
-            priority: fieldPriority.value,
-            status: 'pendiente',
-            description: fieldDescription.value.trim(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            completedAt: null
-        };
-        tasks.push(newTask);
+        tasks.push({ id: Date.now(), title: fieldTitle.value.trim(), subject: fieldSubject.value.trim(), priority: fieldPriority.value, dueDate: fieldDueDate.value, description: fieldDescription.value.trim() });
     }
-    
-    saveTasks();
-    renderTasks();
-    closeTaskModal();
+
+    saveTasks(); renderTasks(); closeTaskModal();
 }
 
-/**
- * Elimina una tarea
- */
-function handleDeleteConfirm() {
-    if (deleteConfirmationId) {
-        tasks = tasks.filter(t => t.id !== deleteConfirmationId);
-        saveTasks();
-        renderTasks();
-        closeConfirmModal();
-    }
+// Delegación simple para botones de editar/eliminar
+function initListeners() {
+    if (newTaskBtn) newTaskBtn.addEventListener('click', openCreateModal);
+    if (emptyCTA) emptyCTA.addEventListener('click', openCreateModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeTaskModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeTaskModal);
+
+    if (taskForm) taskForm.addEventListener('submit', handleFormSubmit);
+
+    if (tasksGrid) tasksGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]'); if (!btn) return;
+        const id = Number(btn.dataset.id); if (btn.dataset.action === 'edit') openEditModal(id);
+        else if (btn.dataset.action === 'delete') {
+            if (confirm('¿Eliminar esta tarea?')) { tasks = tasks.filter(t => t.id !== id); saveTasks(); renderTasks(); }
+        }
+    });
+
+    if (sortSelect) sortSelect.addEventListener('change', (e) => { currentSort = e.target.value; renderTasks(); });
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTaskModal(); });
 }
 
-// --- EVENT LISTENERS ---
+function init() {
+    taskModal = document.getElementById('modal-tarea');
+    taskForm = document.getElementById('formulario-tarea');
+    newTaskBtn = document.getElementById('btn-nueva-tarea');
+    closeModalBtn = document.getElementById('btn-cerrar-modal');
+    cancelBtn = document.getElementById('btn-cancelar');
+    tasksGrid = document.getElementById('grid-tareas');
+    emptyState = document.getElementById('estado-vacio');
+    emptyCTA = document.getElementById('btn-crear-primera-tarea');
 
-// Botón nueva tarea
-newTaskBtn.addEventListener('click', openCreateModal);
-emptyCTA.addEventListener('click', openCreateModal);
+    fieldTitle = document.getElementById('campo-titulo');
+    fieldSubject = document.getElementById('campo-materia');
+    fieldPriority = document.getElementById('campo-prioridad');
+    fieldDueDate = document.getElementById('campo-fecha-entrega');
+    fieldDescription = document.getElementById('campo-descripcion');
 
-// Cerrar modal
-closeModalBtn.addEventListener('click', closeTaskModal);
-cancelBtn.addEventListener('click', closeTaskModal);
+    // Selector de orden
+    sortSelect = document.getElementById('select-ordenar');
+    if (sortSelect) sortSelect.value = currentSort;
 
-// Tecla ESC para cerrar modales
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeTaskModal();
-        closeConfirmModal();
-    }
-});
-
-// Cerrar modal al hacer clic fuera
-taskModal.addEventListener('click', (e) => {
-    if (e.target === taskModal) closeTaskModal();
-});
-
-confirmModal.addEventListener('click', (e) => {
-    if (e.target === confirmModal) closeConfirmModal();
-});
-
-// Formulario
-taskForm.addEventListener('submit', handleFormSubmit);
-
-// Confirmación de eliminación
-confirmCancelBtn.addEventListener('click', closeConfirmModal);
-confirmDeleteBtn.addEventListener('click', handleDeleteConfirm);
-
-// Contadores de caracteres
-fieldTitle.addEventListener('input', updateCharCount);
-fieldDescription.addEventListener('input', updateCharCount);
-
-function updateCharCount() {
-    const titleCount = document.querySelector('.task-form .form-group:nth-child(1) .char-count');
-    const descCount = document.querySelector('.task-form .form-group:nth-child(5) .char-count');
-    
-    if (titleCount) titleCount.textContent = `${fieldTitle.value.length}/100`;
-    if (descCount) descCount.textContent = `${fieldDescription.value.length}/1000`;
+    loadTasks(); renderTasks(); initListeners();
 }
 
-// Filtros y orden
-filterSubjectSelect.addEventListener('change', (e) => {
-    currentFilterSubject = e.target.value;
-    renderTasks();
-});
-
-filterPrioritySelect.addEventListener('change', (e) => {
-    currentFilterPriority = e.target.value;
-    renderTasks();
-});
-
-sortSelect.addEventListener('change', (e) => {
-    currentSort = e.target.value;
-    renderTasks();
-});
-
-// --- INICIALIZACIÓN ---
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadTasks();
-    renderTasks();
-    updateCharCount();
-});
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
